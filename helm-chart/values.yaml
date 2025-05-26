@@ -1,0 +1,35 @@
+replicaCount: 2
+
+image:
+  repository: gcr.io/ping-pong-api-sv/ping-pong-api-sv
+  tag: "latest"
+  pullPolicy: Always
+  
+imagePullSecrets:
+  - name: regcred
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 3000
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+ingress:
+  enabled: true
+  host: "ping-pong.kharabara.com"
+  managedCertificate: "ping-pong-api-sv-cert"
+  tlsSecretName: "ping-pong-api-sv-tls"
+
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

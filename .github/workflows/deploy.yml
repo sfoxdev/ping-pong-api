@@ -1,0 +1,50 @@
+name: Deploy to GKE
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: Authenticate Docker to Google Cloud
+      run: gcloud auth configure-docker us-central1-docker.pkg.dev
+
+    - name: Build and push Docker image
+      run: |
+        IMAGE_TAG=latest
+        docker build -t ${{ secrets.DOCKER_IMAGE }}:$IMAGE_TAG .
+        docker push ${{ secrets.DOCKER_IMAGE }}:$IMAGE_TAG
+
+    - name: Install gke-gcloud-auth-plugin
+      run: |
+        gcloud components install gke-gcloud-auth-plugin --quiet
+        
+    - name: Get GKE credentials
+      env:
+        USE_GKE_GCLOUD_AUTH_PLUGIN: "true"
+      run: |
+        gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} --zone ${{ secrets.GKE_ZONE }}
+
+    - name: Deploy with Helm
+      run: |
+        helm upgrade --install ping-pong-api-sv ./helm-chart \
+          --set image.repository=${{ secrets.DOCKER_IMAGE }} \
+          --set image.tag=latest

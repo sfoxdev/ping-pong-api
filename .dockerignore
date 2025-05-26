@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.git
+coverage
+Dockerfile
+.dockerignore
+.gitignore
+README.md
+helm-chart
